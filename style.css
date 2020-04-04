@@ -73,6 +73,13 @@ body {
 	transition: all 0.1s;
 }
 
+.keyboard__key--active {
+	background: #242679;
+	color: #a1a2cf;
+	box-shadow: none;
+	transition: all 0.1s;
+}
+
 .keyboard__key--space {
 	width: 40%;
 	max-width: 350px;
