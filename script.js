@@ -235,11 +235,15 @@ class Keyboard {
 			case 'Enter':
 				this.enterKeyHandler();
 				break;
+			case '↑':
+			case '←':
+			case '↓':
+			case '→':
 			case '&uarr;':
 			case '&larr;':
 			case '&darr;':
 			case '&rarr;':
-				this.arrowsKeyHandler(key);
+				this.arrowsKeyHandler(key); 
 				break;
 			default:
 				this.stdKeyHandler(key);
@@ -316,15 +320,19 @@ class Keyboard {
 	arrowsKeyHandler(arrow) {
 		const textarea = document.querySelector('.text');
 		switch (arrow) {
+			case '↑':
 			case '&uarr;':
 				this.setCursor(0);
 				break;
+			case '←':
 			case '&larr;':
 				this.setCursor(textarea.selectionStart - 1);
 				break;
+			case '↓':
 			case '&darr;':
 				this.setCursor(textarea.value.length);
 				break;
+			case '→':
 			case '&rarr;':
 				this.setCursor(textarea.selectionStart + 1);
 				break;
