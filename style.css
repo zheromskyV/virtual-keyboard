@@ -93,3 +93,21 @@ body {
 .keyboard__key--extra {
 	background: #3c40c6;
 }
+
+.description {
+    margin: 0 35%;
+    background: #d2dae2;
+    height: fit-content;
+	width: 30%;
+	min-width: fit-content;
+    padding: 10px;
+	color: #242679;
+	font-size: 1.6rem;
+	text-align: center;
+	vertical-align: middle;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.description__os, .description__switch-lang {
+	padding: 2px;
+}

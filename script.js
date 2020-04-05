@@ -53,6 +53,8 @@ class Keyboard {
 	}
 
 	init() {
+		// textarea
+
 		const wrapperText = document.createElement('div');
 		wrapperText.classList.add('wrapper');
 		document.body.append(wrapperText);
@@ -60,6 +62,8 @@ class Keyboard {
 		const text = document.createElement('textarea');
 		text.classList.add('text');
 		wrapperText.append(text);
+
+		// keyboard
 
 		const keyboard = document.createElement('div');
 		keyboard.classList.add('keyboard');
@@ -80,6 +84,26 @@ class Keyboard {
 		keyboardKeys.addEventListener('click', this.clickHandler.bind(this));
 		document.addEventListener('keydown', this.keyDownHandler.bind(this));
 		document.addEventListener('keyup', this.keyUpHandler.bind(this));
+
+		// Description
+
+		const wrapperDesc = document.createElement('div');
+		wrapperDesc.classList.add('wrapper');
+		document.body.append(wrapperDesc);
+
+		const description = document.createElement('div');
+		description.classList.add('description');
+		wrapperDesc.append(description);
+
+		const descOS = document.createElement('p');
+		descOS.classList.add('description__os');
+		descOS.innerHTML = 'Created in Windows';
+		description.append(descOS);
+
+		const descSwitchLang = document.createElement('p');
+		descSwitchLang.classList.add('description__switch-lang');
+		descSwitchLang.innerHTML = 'Switch the language: Ctrl + Alt';
+		description.append(descSwitchLang);
 	}
 
 	createKeys() {
