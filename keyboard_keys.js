@@ -405,7 +405,7 @@ const KEYBOARD_KEYS = [
 		width: 1,
 		upperText: { en: 'Win', ru: 'Win' },
 		lastInRow: false,
-		code: 'OSLeft',
+		code: 'MetaLeft',
 		extra: true,
 	},
 	{
