@@ -1,9 +1,7 @@
-/* global window, document, localStorage */
-
-// eslint-disable-next-line import/extensions
+/* eslint-disable import/extensions */
 import KEYBOARD_KEYS from './keyboard_keys.js';
-// eslint-disable-next-line import/extensions
-import Key from './key.js'
+import Key from './key.js';
+import { KEYS, createElement } from './helpers.js';
 
 class Keyboard {
   constructor(lang = 'en') {
@@ -13,31 +11,29 @@ class Keyboard {
     this.isShiftPressed = false;
     this.isCtrl = false;
     this.isAlt = false;
+    this.textarea = null;
   }
 
   init() {
-    // textarea
+    // Textarea
 
-    const wrapperText = document.createElement('div');
-    wrapperText.classList.add('wrapper');
+    const wrapperText = createElement('div', 'wrapper');
     document.body.append(wrapperText);
 
-    const text = document.createElement('textarea');
-    text.classList.add('text');
+    const text = createElement('textarea', 'text');
     wrapperText.append(text);
 
-    // keyboard
+    this.textarea = document.querySelector('.text');
 
-    const keyboard = document.createElement('div');
-    keyboard.classList.add('keyboard');
+    // Keyboard
+
+    const keyboard = createElement('div', 'keyboard');
     document.body.append(keyboard);
 
-    const wrapperKeyboard = document.createElement('div');
-    wrapperKeyboard.classList.add('wrapper');
+    const wrapperKeyboard = createElement('div', 'wrapper');
     keyboard.append(wrapperKeyboard);
 
-    const keyboardKeys = document.createElement('div');
-    keyboardKeys.classList.add('keyboard__keys');
+    const keyboardKeys = createElement('div', 'keyboard__keys');
     wrapperKeyboard.append(keyboardKeys);
 
     keyboardKeys.append(this.createKeys());
@@ -50,38 +46,32 @@ class Keyboard {
 
     // Description
 
-    const wrapperDesc = document.createElement('div');
-    wrapperDesc.classList.add('wrapper');
+    const wrapperDesc = createElement('div', 'wrapper');
     document.body.append(wrapperDesc);
 
-    const description = document.createElement('div');
-    description.classList.add('description');
+    const description = createElement('div', 'description');
     wrapperDesc.append(description);
 
-    const descOS = document.createElement('p');
-    descOS.classList.add('description__os');
+    const descOS = createElement('p', 'description__os');
     descOS.innerHTML = 'Created in Windows';
     description.append(descOS);
 
-    const descSwitchLang = document.createElement('p');
-    descSwitchLang.classList.add('description__switch-lang');
+    const descSwitchLang = createElement('p', 'description__switch-lang');
     descSwitchLang.innerHTML = 'Switch the language: Ctrl + Alt';
     description.append(descSwitchLang);
   }
 
   createKeys() {
     const keys = document.createDocumentFragment();
-    let row = document.createElement('div');
-    row.classList.add('keyboard__row');
+    let row = createElement('div', 'keyboard__row');
 
     KEYBOARD_KEYS.forEach((k) => {
       const key = new Key(k, this.lang);
-      row.append(key.generate())
+      row.append(key.generate());
 
       if (key.isLastInRow()) {
         keys.append(row);
-        row = document.createElement('div');
-        row.classList.add('keyboard__row');
+        row = createElement('div', 'keyboard__row');
       }
     });
 
@@ -95,23 +85,37 @@ class Keyboard {
     }
   }
 
-  keyDownHandler(event) {
-    event.preventDefault();
-    const keyFound = KEYBOARD_KEYS.find((k) => k.code === event.code);
-    if (!keyFound) return;
-    let key = keyFound.text[this.lang];
-    key = this.isShiftPressed ? keyFound.upperText[this.lang] : keyFound.text[this.lang];
-    this.identifyKey(key);
+  findKey(eventCode) {
+    let key = null;
+    const keyFound = KEYBOARD_KEYS.find((k) => k.code === eventCode);
+    if (keyFound) {
+      key = keyFound.text[this.lang];
+      key = this.isShiftPressed ? keyFound.upperText[this.lang] : keyFound.text[this.lang];
+    }
+    const keyFoundCode = keyFound.code;
+    return { key, keyFoundCode };
+  }
+
+  findTarget(key, keyFoundCode, eventCode) {
     let target;
     // eslint-disable-next-line no-restricted-syntax
-    for (const k of this.keys) {
-      if (k.innerHTML === key || k.innerHTML === key.toUpperCase() || k.innerHTML === key.toLowerCase() || (k.innerHTML === '↑' && key === '&uarr;') || (k.innerHTML === '←' && key === '&larr;') || (k.innerHTML === '↓' && key === '&darr;') || (k.innerHTML === '→' && key === '&rarr;')) {
+    for (const k of this.keys) { // iterating through the keys
+      // find pressed key on html-keyboard
+      if (k.innerHTML === key || k.innerHTML === key.toUpperCase()
+        || k.innerHTML === key.toLowerCase() || (k.innerHTML === KEYS.UAR && key === KEYS.UARC)
+        || (k.innerHTML === KEYS.LAR && key === KEYS.LARC)
+        || (k.innerHTML === KEYS.DAR && key === KEYS.DARC)
+        || (k.innerHTML === KEYS.RAR && key === KEYS.RARC)) {
+        // handle cases with keys sush as shift, ctrl, alt (pair keys)
         if (k.classList.contains('keyboard__key--extra')) {
-          if (event.code === keyFound.code) {
+          if (eventCode === keyFoundCode) {
             target = k;
-            if (event.code.includes('Left')) break;
+            // check whather the key is left or right
+            // if left - break the loop
+            // if not - continue the search
+            if (eventCode.includes('Left')) break;
             // eslint-disable-next-line no-continue
-            else if (event.code.includes('Right')) continue;
+            else if (eventCode.includes('Right')) continue;
           }
         } else {
           target = k;
@@ -119,6 +123,15 @@ class Keyboard {
         }
       }
     }
+    return target;
+  }
+
+  keyDownHandler(event) {
+    event.preventDefault();
+    const { key, keyFoundCode } = this.findKey(event.code);
+    if (!key) return;
+    this.identifyKey(key);
+    const target = this.findTarget(key, keyFoundCode, event.code);
     if (target) {
       if (target.classList.contains('keyboard__key--active') && target.innerHTML === 'Caps Lock') {
         target.classList.remove('keyboard__key--active');
@@ -130,14 +143,12 @@ class Keyboard {
 
   keyUpHandler(event) {
     event.preventDefault();
-    const keyFound = KEYBOARD_KEYS.find((k) => k.code === event.code);
-    if (!keyFound) return;
-    let key = keyFound.text[this.lang];
-    key = this.isShiftPressed ? keyFound.upperText[this.lang] : keyFound.text[this.lang];
-    if (key === 'Caps Lock') return;
-    if (key === 'Ctrl') this.isCtrl = false;
-    if (key === 'Alt') this.isAlt = false;
-    if (key === 'Shift') {
+    const { key, keyFoundCode } = this.findKey(event.code);
+    if (!key) return;
+    if (key === KEYS.CAPS) return;
+    if (key === KEYS.CTRL) this.isCtrl = false;
+    if (key === KEYS.ALT) this.isAlt = false;
+    if (key === KEYS.SHIFT) {
       if (this.isCaps) {
         this.isShiftPressed = false;
         this.isCaps = !this.isCaps;
@@ -150,23 +161,7 @@ class Keyboard {
         this.shiftKeyHandler();
       }
     }
-    let target;
-    // eslint-disable-next-line no-restricted-syntax
-    for (const k of this.keys) {
-      if (k.innerHTML === key || k.innerHTML === key.toUpperCase() || k.innerHTML === key.toLowerCase() || (k.innerHTML === '↑' && key === '&uarr;') || (k.innerHTML === '←' && key === '&larr;') || (k.innerHTML === '↓' && key === '&darr;') || (k.innerHTML === '→' && key === '&rarr;')) {
-        if (k.classList.contains('keyboard__key--extra')) {
-          if (event.code === keyFound.code) {
-            target = k;
-            if (event.code.includes('Left')) break;
-            // eslint-disable-next-line no-continue
-            else if (event.code.includes('Right')) continue;
-          }
-        } else {
-          target = k;
-          break;
-        }
-      }
-    }
+    const target = this.findTarget(key, keyFoundCode, event.code);
     if (target) {
       target.classList.remove('keyboard__key--active');
     }
@@ -174,43 +169,43 @@ class Keyboard {
 
   identifyKey(key) {
     switch (key) {
-      case 'Backspace':
+      case KEYS.BACKSPACE:
         this.backspaceKeyHandler();
         break;
-      case 'Tab':
+      case KEYS.TAB:
         this.tabKeyHandler();
         break;
-      case 'Del':
+      case KEYS.DELETE:
         this.deleteKeyHandler();
         break;
-      case 'Caps Lock':
+      case KEYS.CAPS:
         this.isCaps = !this.isCaps;
         this.capsKeyHandler();
         break;
-      case 'Shift':
+      case KEYS.SHIFT:
         this.isShiftPressed = true;
         this.shiftKeyHandler();
         break;
-      case 'Ctrl':
+      case KEYS.CTRL:
         this.ctrlKeyHandler();
         break;
-      case 'Win':
+      case KEYS.WIN:
         break;
-      case 'Alt':
+      case KEYS.ALT:
         this.altKeyHandler();
         break;
-      case 'Enter':
+      case KEYS.ENTER:
         this.enterKeyHandler();
         break;
-      case '↑':
-      case '←':
-      case '↓':
-      case '→':
-      case '&uarr;':
-      case '&larr;':
-      case '&darr;':
-      case '&rarr;':
-        this.arrowsKeyHandler(key); 
+      case KEYS.UAR:
+      case KEYS.LAR:
+      case KEYS.DAR:
+      case KEYS.RAR:
+      case KEYS.UARC:
+      case KEYS.LARC:
+      case KEYS.DARC:
+      case KEYS.RARC:
+        this.arrowsKeyHandler(key);
         break;
       default:
         this.stdKeyHandler(key);
@@ -218,8 +213,20 @@ class Keyboard {
     }
   }
 
+  handleStdTabEnter(value, cursorPos) {
+    this.textarea.value = this.textarea.value.substring(0, cursorPos)
+      + value + this.textarea.value.substring(cursorPos);
+    this.setCursor(cursorPos + value.length);
+  }
+
+  handleBackspaceDelete(cursorPos) {
+    this.textarea.value = this.textarea.value.substring(0, cursorPos)
+      + this.textarea.value.substring(cursorPos + 1);
+    this.setCursor(cursorPos);
+  }
+
   stdKeyHandler(key) {
-    const textarea = document.querySelector('.text');
+    // const textarea = document.querySelector('.text');
     switch (key) {
       case '&amp;':
         // eslint-disable-next-line no-param-reassign
@@ -239,39 +246,23 @@ class Keyboard {
 
     // eslint-disable-next-line no-bitwise
     const value = this.isCaps ^ this.isShiftPressed ? key.toUpperCase() : key.toLowerCase();
-    const cursorPos = textarea.selectionStart;
-    textarea.value = textarea.value.substring(0, cursorPos) + value + textarea.value.substring(cursorPos);
-    this.setCursor(cursorPos + 1);
+    this.handleStdTabEnter(value, this.textarea.selectionStart);
   }
 
   backspaceKeyHandler() {
-    const textarea = document.querySelector('.text');
-    const cursorPos = textarea.selectionStart;
-    textarea.value = textarea.value.substring(0, cursorPos - 1) + textarea.value.substring(cursorPos);
-    this.setCursor(cursorPos - 1);
+    this.handleBackspaceDelete(this.textarea.selectionStart - 1);
   }
 
   deleteKeyHandler() {
-    const textarea = document.querySelector('.text');
-    const cursorPos = textarea.selectionStart;
-    textarea.value = textarea.value.substring(0, cursorPos) + textarea.value.substring(cursorPos + 1);
-    this.setCursor(cursorPos);
+    this.handleBackspaceDelete(this.textarea.selectionStart);
   }
 
   tabKeyHandler() {
-    const textarea = document.querySelector('.text');
-    const value = '    ';
-    const cursorPos = textarea.selectionStart;
-    textarea.value = textarea.value.substring(0, cursorPos) + value + textarea.value.substring(cursorPos);
-    this.setCursor(cursorPos + 4);
+    this.handleStdTabEnter('    ', this.textarea.selectionStart);
   }
 
   enterKeyHandler() {
-    const textarea = document.querySelector('.text');
-    const value = '\n';
-    const cursorPos = textarea.selectionStart;
-    textarea.value = textarea.value.substring(0, cursorPos) + value + textarea.value.substring(cursorPos);
-    this.setCursor(cursorPos + 1);
+    this.handleStdTabEnter('\n', this.textarea.selectionStart);
   }
 
   ctrlKeyHandler() {
@@ -291,20 +282,20 @@ class Keyboard {
   arrowsKeyHandler(arrow) {
     const textarea = document.querySelector('.text');
     switch (arrow) {
-      case '↑':
-      case '&uarr;':
+      case KEYS.UAR:
+      case KEYS.UARC:
         this.setCursor(0);
         break;
-      case '←':
-      case '&larr;':
+      case KEYS.LAR:
+      case KEYS.LARC:
         this.setCursor(textarea.selectionStart - 1);
         break;
-      case '↓':
-      case '&darr;':
+      case KEYS.DAR:
+      case KEYS.DARC:
         this.setCursor(textarea.value.length);
         break;
-      case '→':
-      case '&rarr;':
+      case KEYS.RAR:
+      case KEYS.RARC:
         this.setCursor(textarea.selectionStart + 1);
         break;
       default: break;
@@ -313,7 +304,8 @@ class Keyboard {
 
   capsKeyHandler() {
     this.keys.forEach((btn) => {
-      let key = KEYBOARD_KEYS.find((k) => k.text[this.lang] === btn.innerHTML || k.upperText[this.lang] === btn.innerHTML);
+      let key = KEYBOARD_KEYS.find((k) => k.text[this.lang] === btn.innerHTML
+        || k.upperText[this.lang] === btn.innerHTML);
       let shouldChangeKey = false;
       if (key) {
         if (key.code.includes('Key')) {
@@ -336,7 +328,8 @@ class Keyboard {
 
   shiftKeyHandler() {
     this.keys.forEach((btn) => {
-      let key = KEYBOARD_KEYS.find((k) => k.text[this.lang] === btn.innerHTML || k.upperText[this.lang] === btn.innerHTML);
+      let key = KEYBOARD_KEYS.find((k) => k.text[this.lang] === btn.innerHTML
+        || k.upperText[this.lang] === btn.innerHTML);
       if (key) {
         key = this.isShiftPressed ? key.upperText[this.lang] : key.text[this.lang];
         // eslint-disable-next-line no-param-reassign
@@ -349,10 +342,10 @@ class Keyboard {
   }
 
   setCursor(pos) {
-    const textarea = document.querySelector('.text');
-    textarea.focus();
-    textarea.selectionStart = pos;
-    textarea.selectionEnd = pos; 
+    // const textarea = document.querySelector('.text');
+    this.textarea.focus();
+    this.textarea.selectionStart = pos;
+    this.textarea.selectionEnd = pos;
   }
 
   switchLang() {
@@ -362,7 +355,8 @@ class Keyboard {
     localStorage.setItem('lang', this.lang);
     // eslint-disable-next-line no-restricted-syntax
     for (const btn of this.keys) {
-      let key = KEYBOARD_KEYS.find((k) => k.text[notLang] === btn.innerHTML || k.upperText[notLang] === btn.innerHTML);
+      let key = KEYBOARD_KEYS.find((k) => k.text[notLang] === btn.innerHTML
+        || k.upperText[notLang] === btn.innerHTML);
       if (key) {
         // eslint-disable-next-line no-continue
         if (key.code.includes('Digit')) continue;
@@ -371,13 +365,12 @@ class Keyboard {
           btn.innerHTML = key;
         }
       }
-    };
+    }
   }
-
 }
 
 
 window.onload = () => {
   const keyboard = new Keyboard(localStorage.getItem('lang') || 'en');
   keyboard.init();
-}
+};

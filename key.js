@@ -1,13 +1,14 @@
-/* global document */
+// eslint-disable-next-line import/extensions
+import { KEY_STD, KEY_WIDE, KEY_EXTRA_WIDE } from './helpers.js';
 
 class Key {
   constructor({
     text = { en: 'a', ru: 'а' },
-    width = 1,
+    width = KEY_STD,
     upperText = { en: 'A', ru: 'А' },
     lastInRow = false,
     code = 'KeyA',
-    extra = false
+    extra = false,
   }, lang = 'en') {
     this.text = text;
     this.width = width;
@@ -22,16 +23,16 @@ class Key {
     const key = document.createElement('button');
     key.classList.add('keyboard__key');
 
-    if (this.width === 2) {
+    if (this.width === KEY_WIDE) {
       key.classList.add('keyboard__key--wide');
-    } else if (this.width === 3) {
+    } else if (this.width === KEY_EXTRA_WIDE) {
       key.classList.add('keyboard__key--space');
     }
     if (this.extra === true) {
       key.classList.add('keyboard__key--extra');
     }
 
-    key.innerHTML = this.text[this.lang]
+    key.innerHTML = this.text[this.lang];
 
     return key;
   }
@@ -39,7 +40,6 @@ class Key {
   isLastInRow() {
     return this.lastInRow;
   }
-
 }
 
 export default Key;
